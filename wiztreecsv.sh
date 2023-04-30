@@ -11,12 +11,12 @@ csv_file="$2"
 
 echo "File Name,Size,Allocated,Modified,Attributes,Files,Folders" > "$csv_file"
 
-output=$(find "$dir" -exec stat -c '%n|%s|%b|%y|%F' '{}' \;)
+output=$(find "$dir" -exec stat -c '%n½%s½%b½%y½%F' '{}' \;)
 
 IFS=$'\n'
 for line in $output; do
-    IFS='|' read -r file_name size blocks mtime type <<< "$line"
-
+    IFS="½"
+    read -r file_name size blocks mtime type <<< "$line"
     is_dir=0
     is_file=0
 
@@ -35,6 +35,6 @@ for line in $output; do
     modified=$(date -d "$mtime" +'%Y/%m/%d %H.%M.%S')
     attributes=0
 
-    windows_path="X:$(echo "$file_name" | sed 's/^[/]*//' | tr '/' '\\')"
+    windows_path="X:\\$(echo "$file_name" | sed 's/^[/]*//' | tr '/' '\\')"
     echo "\"$windows_path\",$size,$allocated,$modified,$attributes,$files,$folders" >> "$csv_file"
 done
