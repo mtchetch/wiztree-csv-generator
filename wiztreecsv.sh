@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ $# -ne 2 ]; then
     echo "Script for generating CSV-file listings used in Wiztree"
     echo "Usage: $0 <directory>/ <csv_output_file>"
@@ -11,30 +10,25 @@ csv_file="$2"
 
 echo "File Name,Size,Allocated,Modified,Attributes,Files,Folders" > "$csv_file"
 
-output=$(find "$dir" -exec stat -c '%n½%s½%b½%y½%F' '{}' \;)
-
+listing=$(find "$dir" -printf '%y½%p½%s½%b½%TY/%Tm/%Td %TH.%TM.%TS\n')
 IFS=$'\n'
-for line in $output; do
-    IFS="½"
-    read -r file_name size blocks mtime type <<< "$line"
-    is_dir=0
-    is_file=0
 
-    if [ "$type" == "directory" ]; then
-        is_dir=1
+for line in $listing; do
+    IFS="½"
+    read -r type file_name size blocks mtime <<< "$line"
+    allocated=$((blocks * 512))
+    # Truncate fractional seconds
+    mtime=$(echo "$mtime" | cut -d. -f1,2,3)
+    modified=$(date -d "$mtime" +'%Y/%m/%d %H.%M.%S' 2>/dev/null)
+    if [ "$type" == "d" ]; then
         files=$(find "$file_name" -maxdepth 1 -type f 2>/dev/null | wc -l)
         folders=$(find "$file_name" -maxdepth 1 -type d 2>/dev/null | wc -l)
         folders=$((folders - 1))
     else
-        is_file=1
         files=0
         folders=0
-    fi
-
-    allocated=$((blocks * 512))
-    modified=$(date -d "$mtime" +'%Y/%m/%d %H.%M.%S')
-    attributes=0
-
+    fi  
+  attributes=0
     windows_path="X:\\$(echo "$file_name" | sed 's/^[/]*//' | tr '/' '\\')"
-    echo "\"$windows_path\",$size,$allocated,$modified,$attributes,$files,$folders" >> "$csv_file"
+    echo "\"$windows_path\",$size,$allocated,$mtime,$attributes,$files,$folders" >> "$csv_file"
 done
