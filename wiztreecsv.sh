@@ -11,6 +11,8 @@ csv_file="$2"
 echo "File Name,Size,Allocated,Modified,Attributes,Files,Folders" > "$csv_file"
 
 listing=$(find "$dir" -printf '%y½%p½%s½%b½%TY/%Tm/%Td %TH.%TM.%TS\n')
+#Remove " from filenames to prevent wiztree import from crashing due to malformed csv
+listing=$(echo "$listing" | sed 's/"/_/g')
 IFS=$'\n'
 
 for line in $listing; do
